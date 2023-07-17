@@ -13,7 +13,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
     var sphereNode: SCNNode!
+    var colorPicker: UIColorWell!
     let placeButton = UIButton()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,6 +24,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Set the view's delegate
         sceneView.delegate = self
         self.configureButton()
+        self.configureColorPicker()
         let sphere = SCNSphere(radius: 0.1)
         sphereNode = SCNNode(geometry: sphere)
         sceneView.scene.rootNode.addChildNode(sphereNode)
@@ -56,10 +59,31 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.session.pause()
         
     }
+    func configureColorPicker() {
+        colorPicker = UIColorWell()
+        view.addSubview(colorPicker)
+        
+        colorPicker.supportsAlpha = false
+        colorPicker.title = "Color"
+        colorPicker.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            colorPicker.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 32),
+            colorPicker.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 32),
+        ])
+    }
     
     func configureButton() {
+        view.addSubview(placeButton)
         placeButton.configuration = .gray()
         placeButton.configuration?.title = "Place"
+        
+        placeButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            placeButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            placeButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -32),
+            placeButton.heightAnchor.constraint(equalToConstant: 64),
+            placeButton.widthAnchor.constraint(equalToConstant: 256)
+        ])
     }
     
     func createSphereNode(position: SCNVector3, rotation: SCNVector4) -> SCNNode {
@@ -97,17 +121,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         */
             let ct = frame.camera.transform
             let transformedPoint = simd_mul(ct, ref)
-            let transformedPosition_1 = SCNVector3(x: transformedPoint.x, y: transformedPoint.y, z: transformedPoint.z)
+            let transformedPosition = SCNVector3(x: transformedPoint.x, y: transformedPoint.y, z: transformedPoint.z)
         
-        self.updateSpherePosition(SCNVector3(x: transformedPoint.x, y: transformedPoint.y+0.5
-                                             , z: transformedPoint.z))
+        self.updateSpherePosition(SCNVector3(x: transformedPoint.x, y: transformedPoint.y, z: transformedPoint.z))
             
             //let cameraPosition = SCNVector3(cameraTransform.m41, cameraTransform.m42, cameraTransform.m43-distance)
         
             //print(cameraTransform)
             
-            circleNode.position = transformedPosition_1
-            sceneView.scene.rootNode.addChildNode(circleNode)
+            circleNode.position = transformedPosition
+            //sceneView.scene.rootNode.addChildNode(circleNode)
         }
 
     // MARK: - ARSCNViewDelegate
