@@ -2,6 +2,9 @@
 
 Draw in Augmented Reality with this amazing app!
 
+|![First](images/IMG_1.jpeg)|![Second](images/IMG_2.jpeg)|![Third](images/IMG_3.jpeg)|
+|---|---|---|
+
 ### Installation
 
 Require [Xcode](https://developer.apple.com/xcode/)
