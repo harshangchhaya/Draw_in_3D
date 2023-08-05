@@ -21,7 +21,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     var radiusValue: Int = 50
     var rawRadiusScale: Double = 50 {
         didSet {
-            // Ensure value stays within the range of 1 to 100
+            // Ensure value stays within the range of 10 to 100
             rawRadiusScale = max(1, min(91, rawRadiusScale))
             radiusValue = Int(ceil(100 - rawRadiusScale + 1))
             updateRadiusLabel(radiusValue)
@@ -39,20 +39,12 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         self.configureColorPicker()
         self.configureRadiusLabel()
         let sphere = SCNSphere(radius: 0.02)
+        sphere.isGeodesic = true
         sphereNode = SCNNode(geometry: sphere)
         sphereNode.opacity = 0.5
         
         
         sceneView.scene.rootNode.addChildNode(sphereNode)
-        
-        // Show statistics such as fps and timing information
-        //sceneView.showsStatistics = true
-        
-        // Create a new scene
-        //let scene = SCNScene(named: "art.scnassets/ship.scn")!
-        
-        // Set the scene to the view
-        //sceneView.scene = scene
         
         sceneView.autoenablesDefaultLighting = true
     }
@@ -76,6 +68,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
     }
     
+    // MARK: - UI Interaction
+    
     @objc func handlePinch(_ gesture: UIPinchGestureRecognizer) {
         if gesture.state == .changed {
             let pinchScale = Double(gesture.scale)
@@ -90,6 +84,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     @objc func placeSphereAtLocation() {
         let sphere = SCNSphere(radius: 0.025)
+        sphere.isGeodesic = true
         let placedSphere = SCNNode(geometry: sphere)
         placedSphere.position = currentSpherePosition
         placedSphere.geometry?.firstMaterial?.diffuse.contents = currentSphereColor
@@ -101,6 +96,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     @objc func changeColor() {
         currentSphereColor = colorPicker.selectedColor
     }
+    
+    // MARK: - UI Config
     
     func configureRadiusLabel() {
         radiusLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -144,50 +141,47 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         ])
     }
     
+    
+    // MARK: - Functions
     func createSphereNode(position: SCNVector3, rotation: SCNVector4) -> SCNNode {
+        // Returns a new sphere to be placed in scene
             let radius: CGFloat = 0.01  // Radius of the circle
-            let circleGeometry = SCNSphere(radius: radius)
-            let circleNode = SCNNode(geometry: circleGeometry)
+            let sphereGeometry = SCNSphere(radius: radius)
+        sphereGeometry.isGeodesic = true
+            let sphereNode = SCNNode(geometry: sphereGeometry)
             
-            // Customize appearance, materials, or add additional components to the circle node if desired
+            sphereNode.position = position
+            sphereNode.rotation = rotation
             
-            circleNode.position = position
-            circleNode.rotation = rotation
-            
-            return circleNode
+            return sphereNode
         }
     
     func updateRadiusLabel(_ value: Int) {
+        // Updates zoom value
         radiusLabel.text = "zoom: \(value)"
     }
     
     
     func updateSpherePosition(_ position: SCNVector3){
+        // Updates the reference sphere's position
         sphereNode.position = position
-        print(Float(radiusValue/10)*0.025)
-        //sphereNode.geometry.setValue(
         sphereNode.geometry?.firstMaterial?.diffuse.contents = currentSphereColor
         sphereNode.geometry?.setValue( (Float(radiusValue)/10)*0.025, forKey: "radius")
-        //sphereNode.geometry?.setValue(<#T##value: Any?##Any?#>, forKey: <#T##String#>)
+       
         
     }
+    
+    // MARK: - Render
     
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
             guard let frame = sceneView.session.currentFrame else { return }
             
-            let distance: Float = 1.0  // Distance of the circle from the camera in meters
             let ref = simd_make_float4(0, 0, -1, 1)
-            let reference = SCNVector4(x: 0, y: 0, z: -distance, w: 0)
             let position = SCNVector3(x: 0, y: 0, z: 0)
             let rotation = SCNVector4(x: 0, y: 0, z: 0, w: 0)  // Adjust rotation if needed
             
-            let circleNode = createSphereNode(position: position, rotation: rotation)
-            
-            let cameraTransform = SCNMatrix4(frame.camera.transform)
-        /*
-            let transformedPosition = GLKMatrix4Multiply(SCNMatrix4ToGLKMatrix4(cameraTransform),SCNVector4ToGLKVector4(reference) )//SCNMatrix4Mult(cameraTransform,reference)
-        //SCNMatrix4ToGLKMatrix4(cameraTransform) * SCNVector4ToGLKVector4(reference)
-        */
+            let sphereNode = createSphereNode(position: position, rotation: rotation)
+        
             let ct = frame.camera.transform
             let transformedPoint = simd_mul(ct, ref)
             let transformedPosition = SCNVector3(x: transformedPoint.x, y: transformedPoint.y, z: transformedPoint.z)
@@ -195,39 +189,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
             self.updateSpherePosition(SCNVector3(x: transformedPoint.x, y: transformedPoint.y, z: transformedPoint.z))
             
-            //let cameraPosition = SCNVector3(cameraTransform.m41, cameraTransform.m42, cameraTransform.m43-distance)
-        
-            //print(cameraTransform)
-            
-            circleNode.position = transformedPosition
-            //sceneView.scene.rootNode.addChildNode(circleNode)
+            sphereNode.position = transformedPosition
         }
 
-    // MARK: - ARSCNViewDelegate
-    
-/*
-    // Override to create and configure nodes for anchors added to the view's session.
-    func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
-        let node = SCNNode()
-     
-        return node
-    }
-*/
-    
-/*
-    func session(_ session: ARSession, didFailWithError error: Error) {
-        // Present an error message to the user
-        
-    }
-    
-    func sessionWasInterrupted(_ session: ARSession) {
-        // Inform the user that the session has been interrupted, for example, by presenting an overlay
-        
-    }
-    
-    func sessionInterruptionEnded(_ session: ARSession) {
-        // Reset tracking and/or remove existing anchors if consistent tracking is required
-        
-    }
-*/
 }
